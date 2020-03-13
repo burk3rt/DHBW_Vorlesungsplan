@@ -41,7 +41,7 @@ def main():
     print("Probably done")
 
 def filter_events():
-    #tabula.convert_into("plan.pdf", "output.json", output_format="json", pages='all')
+    tabula.convert_into("plan.pdf", "output.json", output_format="json", pages='all')
     events = []
     with open('output.json') as json_file:
         whole_json = json.load(json_file)
@@ -81,7 +81,7 @@ def filter_events():
                     'end' : end_day_time,
                     'text': text
                 }
-                
+
                 if len(event['text']) > 1: 
                     events.append(event)
                     counter +=1
