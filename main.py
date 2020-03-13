@@ -73,8 +73,9 @@ def filter_events():
                 
                 if kind_identifier(data[y-1][x]["text"]) == "weekday":
                     time_list = strftime(content)
+                    print(time_list)
                     date_list = strfdate(data[y-1][x]["text"])
-                    day_time = datetime(date_list[0], date_list[1], date_list[2])
+                    day_time = datetime(date_list[0], date_list[1], date_list[2]) #todo: Attach time
 
                 event = {
                     'start' : start_day_time,
@@ -102,7 +103,13 @@ def strfdate(input):
     return temp
 
 def strftime(input):
-    #Todo: Return List with start and end
+    #result[start hour, start minute, end hour, end minute]
+    result = [-1,-1,-1,-1]
+    dot = input.find('.')
+    result[0] = int(input[:dot])
+    result[1] = int(input[dot + 1:dot+3])
+
+    return result
     
 
 
