@@ -14,14 +14,6 @@ from datetime import datetime
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
 def main():
-    #sign_in()
-    filter_events()
-
-
-def sign_in():
-    """Shows basic usage of the Google Calendar API.
-    Prints the start and name of the next 10 events on the user's calendar.
-    """
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -42,10 +34,11 @@ def sign_in():
             pickle.dump(creds, token)
 
     service = build('calendar', 'v3', credentials=creds)
-    #print(service.calendarList().list().execute())
-
-    # Call the Calendar API
-    #create_event(service,"TEST",datetime(2020,3,3,8,20),datetime(2020,3,3,8,30))
+    #Creates the filtered events
+    events = filter_events()
+    for event in events:
+        create_event(service,event['text'],event['start'],event['end'])
+    print("Probably done")
 
 def filter_events():
     #tabula.convert_into("plan.pdf", "output.json", output_format="json", pages='all')
@@ -54,71 +47,85 @@ def filter_events():
         whole_json = json.load(json_file)
         data = whole_json[0]['data']
 
-    temp = 22
-    print(data[temp][0]["text"])
-    print(kind_identifier(data[temp][0]["text"]))
-    print(len(data))
-    print(len(data[0]))
-
+    #Filters events data
+    counter = 0
     for x in range(0, len(data[0])):
         for y in range(0, len(data)):
             content = data[y][x]["text"]
             if kind_identifier(content) == "time":
                 text, start_day_time, end_day_time = "", datetime(1970,1,1,1,1), datetime(1970,1,1,1,2)
+                #Adds content to event
                 if kind_identifier(data[y+1][x]["text"]) == "content" and kind_identifier(data[y+2][x]["text"]) == "content": 
                     #Wenn die beiden folgenden Zeilen Vorlesungen sind
                     text = ' '.join([data[y+1][x]["text"], data[y+2][x]["text"]])
                 else:
                     text = data[y+1][x]["text"]
-                
+                #Adds date and time to event
                 if kind_identifier(data[y-1][x]["text"]) == "weekday":
                     time_list = strftime(content)
-                    print(time_list)
                     date_list = strfdate(data[y-1][x]["text"])
-                    day_time = datetime(date_list[0], date_list[1], date_list[2]) #todo: Attach time
+                    start_day_time = datetime(date_list[0], date_list[1], date_list[2],time_list[0],time_list[1])
+                    end_day_time = datetime(date_list[0], date_list[1], date_list[2],time_list[2],time_list[3])
+                else: #needed for 2nd event on one day
+                    tempY = y-1
+                    while not kind_identifier(data[tempY][x]["text"]) == "weekday":
+                        tempY -= 1
+                    
+                    time_list = strftime(content)
+                    date_list = strfdate(data[tempY][x]["text"])
+                    start_day_time = datetime(date_list[0], date_list[1], date_list[2],time_list[0],time_list[1])
+                    end_day_time = datetime(date_list[0], date_list[1], date_list[2],time_list[2],time_list[3])    
 
                 event = {
                     'start' : start_day_time,
                     'end' : end_day_time,
                     'text': text
                 }
+                
+                if len(event['text']) > 1: 
+                    events.append(event)
+                    counter +=1
+    print(str(counter) + " events found")
+    return events
 
-
+#identifies the kind of the input in weekday, time, content or skippable
 def kind_identifier(input):
     weekdays = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
 
     if "Woche" in input or input == "":
         return "skip"
-    elif "-" in input:
-        return "time"
+    elif ("-" in input or "–" in input) and "." in input and input[:1].isdigit():
+        return "time" # NICHT EINDEUTIG
     elif len(input) > 1:
         for day in weekdays:
             if input.startswith(day):
                 return "weekday"
         return "content"
     
+# transforms 16.03.2020 to list[2020,3,16]
 def strfdate(input):
-    input = input[-10:]
-    temp = [input[-4:], input[-7:-5], input[:2]]
+    input = input[input.find(',') + 2:]
+    temp = [int(input[-4:]), int(input[-7:-5]), int(input[:2])]
     return temp
 
+# transforms 09.00 - 12.15 to list[9,0,12,15]
 def strftime(input):
-    #result[start hour, start minute, end hour, end minute]
     result = [-1,-1,-1,-1]
     dot = input.find('.')
     result[0] = int(input[:dot])
     result[1] = int(input[dot + 1:dot+3])
 
+    input = input[input.find('-') + 1:]
+    dot = input.find('.')
+    result[2] = int(input[:dot])
+    result[3] = int(input[dot + 1:dot+3])
+
     return result
     
-
-
-    
-
+#Create events, change calendar id is necessary 
 def create_event(service,Vorlesung, Start, End):
     event = {
         'summary': Vorlesung,
-        'location': "Unknown",
         'description': "",
         'start': {
             'dateTime': Start.strftime("%Y-%m-%dT%H:%M:%S"),
