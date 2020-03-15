@@ -2,7 +2,11 @@
     Installation:
     1. Python 3.7 herunterladen
     2. pip install virtualenv
-    3. pip -r requirements.txt
+    3. pip install -r requirements.txt
+    4. Downlaod your credentials.json file
+        4.1 Go to https://developers.google.com/calendar/quickstart/python
+        4.2 Click on Enable Google Calender API
+        4.3 Download the file and put in in the project directory
     4. source env/bin/activate
 '''
 from __future__ import print_function
