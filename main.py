@@ -1,3 +1,10 @@
+'''
+    Installation:
+    1. Python 3.7 herunterladen
+    2. pip install virtualenv
+    3. pip -r requirements.txt
+    4. source env/bin/activate
+'''
 from __future__ import print_function
 import datetime
 import pickle
@@ -38,6 +45,8 @@ def main():
     events = filter_events()
     for event in events:
         create_event(service,event['text'],event['start'],event['end'])
+        print(event)
+        pass
     print("Probably done")
 
 def filter_events():
